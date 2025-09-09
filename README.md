@@ -1,3 +1,5 @@
+This is still a work in progress! 
+
 # Wigner 6j
 
 This is a implemented code of the formulae provided in 
