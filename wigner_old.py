@@ -52,7 +52,6 @@ class Fraction:
         if(self.nominator == -other.nominator and self.denominator == other.denominator and self.nominatorRoot == other.nominatorRoot and self.denominatorRoot == other.denominatorRoot):
           return 0
         print("Adding two roots. Imprecision!", self, other)
-        raise ValueError("Imprecision")
         return (self.nominator * other.denominator * math.sqrt(self.nominatorRoot * other.denominatorRoot) + other.nominator * self.denominator * math.sqrt(other.nominatorRoot * self.denominatorRoot))/(self.nominator*other.nominator*math.sqrt(self.denominatorRoot*other.denominatorRoot))
       return Fraction(self.nominator * other.denominator + other.nominator * self.denominator, self.denominator * other.denominator).reduce()
     elif isinstance(other, int):
@@ -126,11 +125,9 @@ class Fraction:
     if isinstance(other, Fraction):
       s = self.reduce()
       o = other.reduce()
-      return (s.nominator == o.nominator) and (s.denominator == o.denominator) and (s.nominatorRoot == o.nominatorRoot) and (s.denominatorRoot == o.denominatorRoot)
+      return (s.nominator == o.nominator and s.denominator == o.denominator and s.nominatorRoot == o.nominatorRoot and s.denominatorRoot == o.denominatorRoot)
     if isinstance(other, (float,int)):
       return self.denominator * other * self.denominatorRoot == self.nominator *math.sqrt(self.nominatorRoot)
-    else:
-      return False
 
   def __gt__(self, other):
     if isinstance(other, Fraction):
@@ -549,7 +546,6 @@ def find_child_diagram(alpha, beta):
   for diagram in diagrams1:
     if diagram in diagrams2 and diagram not in diagrams and diagram != False:
       diagrams.append(diagram)
-  diagrams.sort(reverse=True)
   return diagrams
 
 def conjugate(alpha, n):
@@ -591,9 +587,6 @@ def is_gluon(alpha, n=3):
   """
   return (alpha == "gluon" or is_adjoint(alpha, n))
 
-def is_real(alpha): # TODO compatible with any n
-  return alpha[0] == alpha[1] *2 and alpha[2] == 0
-
 def kronecker_delta(i,j):
   """
   Returns 1 if both inputs are equal and 0 otherwise.
@@ -616,8 +609,8 @@ def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
   """
   Returns the coefficients as defined in the gluon-paper.
   """
-  #if(alpha == [0,0,0]): #TODO Compatible with n
-  #  return 0
+  if(alpha == [0,0,0]): #TODO Compatible with n
+    return 0
   if(a==1 and i == 2):
     return 0
   if(alpha != gamma):
@@ -654,48 +647,9 @@ def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
           return 0
         return Fraction.sqrt(scalar_product(1,1,alpha,n)/(scalar_product(1,1,alpha,n)*scalar_product(2,2,alpha,n)-scalar_product(1,2,alpha,n)**2)).reduce() 
 
-def calculate_normalization_plus(alpha, alpha_prime, n, debug):
-  norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,get_dimension(alpha_prime,n))+calculate_wigner_6j_two_quarks(alpha,alpha_prime, [1,0,0], alpha, conjugate(alpha_prime,n), [1,0,0], n, debug) - Fraction(2,n*get_dimension(alpha,n))))
-  if debug:
-    print(debug * "  "+"Normalization plus: ",norm, "= root of: ", Fraction(2,(n**2-1)) ,"*(", Fraction(1,get_dimension(alpha_prime,n)),"+",calculate_wigner_6j_two_quarks(alpha,alpha_prime, [1,0,0], alpha, conjugate(alpha_prime,n), [1,0,0], n, debug),"-",Fraction(4,n*get_dimension(alpha,n)),")")
-  return norm
-
-def calculate_normalization_minus(alpha, alpha_prime, n, debug):
-  norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,get_dimension(alpha_prime,n))-calculate_wigner_6j_two_quarks(alpha,alpha_prime, [1,0,0], alpha, conjugate(alpha_prime,n), [1,0,0], n, debug)))
-  if debug:
-    print(debug * "  "+"Normalization minus: ",norm, "= root of: ", Fraction(2,(n**2-1)) , Fraction(1,get_dimension(alpha_prime,n)),calculate_wigner_6j_two_quarks(conjugate(alpha_prime,n),alpha,[1,0,0],alpha_prime,alpha,[1,0,0], n, debug))
-  return norm
-
-def check_vertex_sign(vertex, alpha, beta, gamma, delta, epsilon, zeta, v1,v2,v3,v4,n=3):
-  if type(vertex) is int:
-    match vertex:
-      case 1:
-        reps = [beta, gamma, delta,v1]
-      case 2:
-        reps = [alpha, gamma, epsilon,v2]
-      case 3:
-        reps = [alpha, beta, zeta,v3]
-      case 4:
-        reps = [delta, epsilon, zeta,v4]
-    if ((reps[0] == [1,0,0] and reps[1] == [1,0,0] and reps[2] == [1,1,0] and reps[3]==1)
-      or (reps[0] == [1,0,0] and reps[1] == [1,1,0] and reps[2] == [1,0,0] and reps[3]==1)
-       or (reps[0] == [1,1,0] and reps[1] == [1,0,0] and reps[2] == [1,0,0] and reps[3]==1)):
-       return -1
-    elif ((reps[0] == [2,1,0] and reps[1] == [4,2,0] and reps[2] == [4,2,0] and reps[3]==1)
-      or (reps[0] == [4,2,0] and reps[1] == [4,2,0] and reps[2] == [2,1,0] and reps[3]==1)
-       or (reps[0] == [4,2,0] and reps[1] == [2,1,0] and reps[2] == [4,2,0] and reps[3]==1)):
-       return -1
-    else: return 1
-  elif type(vertex) is list:
-    sign = 1
-    for value in vertex:
-      sign *= check_vertex_sign(value, alpha, beta, gamma, delta, epsilon, zeta,v1,v2,v3,v4,n)
-    return sign
-  else: return 1
-
 def young_addition(alpha, beta):
   """
-  Adds the diagram obtained by adding rowlengths of both provided diagrams.
+  Adds the diagram obtained by addind rowlengths of both provided diagrams.
   """
   aCopy = alpha.copy()
   for i in range(len(alpha)):
@@ -710,26 +664,11 @@ def young_multiplication_quark(alpha):
   diagrams = []
   for i in range(1,len(alpha)+1):
     diag = add_box_to_diagram(alpha,i)
-    if diag != False:
+    if(diag != False):
       diagrams.append(diag)
   return diagrams
 
-def young_multiplication_antiquark(alpha):
-  """
-  Carries out young multiplication of alpha and a quark.
-  """
-  diagrams = [[1,1,0],[1,0,1],[0,1,1]]
-  new_diagrams = []
-  for diagram in diagrams:
-    new_diagram = young_addition(diagram,alpha)
-    if new_diagram != False:
-      if new_diagram[len(new_diagram)-1] == 1:
-        for i in range(len(new_diagram)):
-          new_diagram[i] -= 1
-      new_diagrams.append(new_diagram)
-  return new_diagrams
-
-def young_multiplication_gluon(alpha, unique=True):
+def young_multiplication_gluon(alpha):
   """
   Carries out young multiplication of alpha and a gluon.
   """
@@ -742,12 +681,8 @@ def young_multiplication_gluon(alpha, unique=True):
   for i in intermediateDiagrams:
     diag2 = find_child_diagram(i,i)
     for j in diag2:
-      if j != False:
-        if unique:
-          if j not in diagrams:
-            diagrams.append(j)
-        else:
-          diagrams.append(j)
+      if(j != False):
+        diagrams.append(j)
   return diagrams
 
 def young_multiplication(alpha, beta):
@@ -805,12 +740,12 @@ def calculateSijij(alpha, beta, delta, epsilon, row1, row2, n):
   """
   return Fraction(1,1,1,get_dimension(epsilon,n)*get_dimension(beta,n)).reduce()
 
-def calculate_wigner_6j_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1=1, v2=1, v3=1, v4=1, n=3, debug=True):
+def calculate_wigner_6j_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
   """
   Calculates a case 0 6j-symbol.
   """
   if(debug):
-    print(debug * "  "+"TwoQuarkSymbol", alpha, beta, gamma, delta, epsilon, zeta)
+    print("TwoQuarkSymbol", alpha, beta, gamma, delta, epsilon, zeta)
   j = find_changed_index(epsilon, delta)
   i = find_changed_index(epsilon, alpha)
   j2 = find_changed_index(alpha, beta)
@@ -844,12 +779,12 @@ def is_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 
   """
   #inner vertex cases
   if(find_changed_index(alpha, beta) != -1 and is_gluon(epsilon) and is_quark(delta) and is_quark(zeta) and v1 == 1 and v3 == 1 and v4 == 1):
-    return True # calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
+    return calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
   #if(find_changed_index(beta, alpha) != -1 and is_gluon(delta) and is_quark(epsilon) and is_quark(conjugate(zeta, n)) and v2 == 1 and v3 == 1 and v4 == 1):
   #  return calculate_6j_with_quark_gluon_vertex(gamma, alpha, beta, conjugate(zeta, n), delta, epsilon, v3, v1, v2, v4, n, debug)
   #TODO there are more cases
   if(is_gluon(epsilon) and is_quark(conjugate(delta, n)) and is_quark(conjugate(zeta, n)) and v1 == 1 and v2 == 1 and v4 == 1):
-    return True # calculate_6j_with_quark_gluon_vertex(gamma, beta, alpha, [1,0,0], epsilon, [1,0,0], v3, v2, v1, v4, n, debug)
+    return calculate_6j_with_quark_gluon_vertex(gamma, beta, alpha, [1,0,0], epsilon, [1,0,0], v3, v2, v1, v4, n, debug)
   #bottom right vertex cases]
   #if(find_changed_index(alpha, epsilon) != -1 and is_gluon(delta) and is_quark(beta) and is_quark(gamma) and v1 == 1 and v2 == 1 and v3 == 1):
   #  return calculate_6j_with_quark_gluon_vertex(epsilon, alpha, conjugate(zeta, n), beta, delta, gamma, v3, v4, v2, v1, n, debug)
@@ -885,8 +820,7 @@ def is_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1
   #if(is_quark(beta) and is_gluon(epsilon) and v1 == 1 and v3 == 1 and (v4 == 1 or v4 == 2)):
   #  return calculate_6j_with_quark_gluon_opposing(gamma, alpha, beta, conjugate(zeta, n), conjugate(delta, n), epsilon, v3, v1, v2, v4, n, debug)
   #case 3:
-  if(is_quark(gamma) and is_gluon(zeta) and v1 == 1 and v2 == 1):
-    return True
+  if(is_quark(gamma) and is_gluon(zeta) and v1 == 1 and v2 == 1 and (v4 == 1 or v4 == 2)):
     return calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
   #Cases with Gluon as outer line
   #case 1:
@@ -933,253 +867,100 @@ def is_6j_with_three_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3,
   #  return calculate_6j_with_three_gluon(conjugate(epsilon, n), conjugate(delta, n), gamma, conjugate(beta, n), conjugate(alpha, n), conjugate(zeta, n), v1, v2, v4, v3, n, debug)
   return False
 
-def calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False, include_coefficient=True):
+def calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
   """
   Calculates a case 1 6j-symbol.
   """
   if(debug):
-    print(debug * "  "+"QuarkGluon", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4)
+    print("QuarkGluon", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4)
   lambdaks = find_intermediate_diagrams(alpha,gamma, False)
   if(len(lambdaks) == 0 or type(lambdaks) == bool):
     return 0 
-  if type(v2) == str:
-    possible_intermediates = find_intermediate_diagrams(alpha,gamma,False)
-    index = int(v2[0])-1
-    intermediate = possible_intermediates[index]
-    alpha_prime = conjugate(intermediate,n)
-    intermediates = find_child_diagram(alpha,gamma)
-    alpha_tilde = intermediates[index]
-    if alpha_prime in intermediates:
-      alpha_tilde = alpha_prime
-    if debug:
-      print(debug * "  "+"alpha_tilde:",alpha_tilde)
-    length = len(intermediates)-1
-    if length == 0:
-      length = 1
-    sign = check_vertex_sign([1,4],alpha,beta,[1,0,0],gamma,alpha_tilde,[1,0,0],1,1,1,1)
-    if include_coefficient:
-      return calculate_coefficient(alpha,gamma,index,length,n)*Fraction(1,n**2-1)*(sign*calculate_wigner_6j_two_quarks(alpha,beta,[1,0,0],gamma,alpha_tilde,[1,0,0],n=n,debug=debug) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-    if debug:
-      print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,Fraction(1,n**2-1),(sign*calculate_wigner_6j_two_quarks(alpha,beta,[1,0,0],gamma,alpha_tilde,[1,0,0],n=n,debug=False) , Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n))))
-    return Fraction(1,n**2-1)*(sign*calculate_wigner_6j_two_quarks(alpha,beta,[1,0,0],gamma,alpha_tilde,[1,0,0],n=n,debug=debug) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-  else:
-    intermediates = find_intermediate_diagrams(alpha,gamma,False)
-    length = len(intermediates)-1
-    if length == 0:
-      length = 1
-    index = v2-1
-    if debug:
-      print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,calculate_coefficient(alpha,gamma,length,v2,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(beta,intermediates[index]),get_dimension(beta,n)) ,"-", Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n))))
-    if include_coefficient:
-      return calculate_coefficient(alpha,gamma,length,v2,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(beta,intermediates[index]),get_dimension(beta,n)) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-    return Fraction(1,n**2-1)*(Fraction(kronecker_delta(beta,intermediates[index]),get_dimension(beta,n)) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-
-def calculate_6j_with_quark_gluon_conjugate_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
-  """
-  Calculates a case 1 6j-symbol.
-  """
-  if(debug):
-    print(debug * "  "+"QuarkGluon", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4)
-  lambdaks = find_intermediate_diagrams(alpha,gamma, False)
-  if(len(lambdaks) == 0 or type(lambdaks) == bool):
-    return 0 
-  if type(v2) == str:
-    intermediate = find_child_diagram(alpha,gamma)[int(v2[0])-1]
-    return calculate_coefficient(alpha,gamma,int(v2[0]),int(v2[0]),n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(beta,intermediate),get_dimension(beta,n)) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-  else:
-    intermediate = find_intermediate_diagrams(alpha,gamma,False)[v2-1]
-    return calculate_coefficient(alpha,gamma,v2,v2,n)*Fraction(1,n**2-1)*(calculate_wigner_6j_two_quarks(alpha,intermediate,[1,0,0],gamma,beta,[1,0,0],n=n) - Fraction(kronecker_delta(alpha,gamma),n*get_dimension(alpha,n)))
-
-def calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False, include_coefficient=True):
-  """
-  Calculates a case 2 6j-symbol.
-  """
-  if(debug):
-    print((debug-1) * "  "+"QuarkGluonOpposing", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4) 
-  alpha_primes = find_intermediate_diagrams(delta, epsilon)
-  
-  #print(alpha_primes, delta, epsilon,v4)
-  if type(v4) == str:
-    intermediates = find_child_diagram(delta,epsilon)
-    if debug:
-      print(debug * "  "+"Possible alpha_tildes",intermediates)
-    index = int(v4[0])
-    length = len(intermediates)-1
-    if length == 0:
-      length = 1
-    alpha_prime = intermediates[index-1]
-    intermediates_1 = young_multiplication_quark(alpha_prime)
-    intermediates_2 = young_multiplication_antiquark(alpha)
-    intermediates_3 = young_multiplication_antiquark(beta)
-    solution = Fraction()
-    if debug:
-      print(debug * "  "+"All intermediates, rho should be in all of these",intermediates_1, intermediates_2, intermediates_3)
-    for rho in intermediates_1:
-      if rho in intermediates_2 and rho in intermediates_3:
-        if debug:
-          print(debug * "  "+"Rho: ",rho)
-        product = Fraction(1,get_dimension(rho,n))
-        if debug:
-          print(debug * "  "+"Pre-Factor of Triple Product",product)
-        sign = check_vertex_sign([1,2,3,4],epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],1,1,1,1)
-        product *= sign*calculate_wigner_6j_two_quarks(epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],n=n,debug=debug+1)
-        if debug:
-          print(debug * "  "+"1st Factor and resulting intermediate product:",sign*calculate_wigner_6j_two_quarks(epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],n=n,debug=False),product)
-        product *= calculate_wigner_6j_two_quarks(rho,beta,[1,0,0],delta,alpha_prime,[1,0,0],n=n,debug=debug+1)
-        if debug:
-          print(debug * "  "+"2nd Factor and resulting intermediate product:",calculate_wigner_6j_two_quarks(rho,beta,[1,0,0],delta,alpha_prime,[1,0,0],n=n,debug=False),product)
-        sign2 = check_vertex_sign(2,conjugate(beta,n),conjugate(rho,n),conjugate(alpha,n),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1)
-        product *= sign2*Wigner6j(conjugate(beta,n),conjugate(rho,n),conjugate(alpha,n),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n,debug+1)
-        if debug:
-          print(debug * "  "+"3rd Factor and resulting intermediate product:","sign=",sign2,sign2*Wigner6j(conjugate(beta,n),conjugate(rho,n),conjugate(alpha,n),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n,False),product)
-        solution += product
-        if debug:
-          print(debug * "  "+"Current total:",solution)
-  else:
-    if debug:
-      print(debug * "  "+"Possible alpha_primes",alpha_primes)
-    #if len(alpha_primes)<=v4:
-    #  return 0
-    alpha_prime = alpha_primes[v4-1]
-    intermediates_1 = find_intermediate_diagrams(alpha_prime,alpha_prime)
-    intermediates_2 = find_intermediate_diagrams(alpha,alpha)
-    intermediates_3 = find_intermediate_diagrams(beta,beta)
-    print(debug * "  "+"All intermediates, rho should be in all of these",intermediates_1, intermediates_2, intermediates_3)
-    solution = Fraction()
-    for rho in intermediates_1:
-      if rho in intermediates_2 and rho in intermediates_3:
-        if debug:
-          print(debug * "  "+"Rho: ",rho)
-        product = Fraction(1,get_dimension(rho,n))
-        if debug:
-          print(debug * "  "+"Pre-Factor of Triple Product",product)
-        product *= calculate_wigner_6j_two_quarks(alpha,rho,[1,0,0],alpha_prime,epsilon,[1,0,0],n=n,debug=debug+1)
-        if debug:
-          print(debug * "  "+"1st Factor and resulting intermediate product:",calculate_wigner_6j_two_quarks(alpha,rho,[1,0,0],alpha_prime,epsilon,[1,0,0],n=n,debug=False),product)
-        sign = check_vertex_sign([1,2,3,4],rho,beta,[1,0,0],delta,alpha_prime,[1,0,0],1,1,1,1)
-        product *= sign * calculate_wigner_6j_two_quarks(alpha_prime,rho,[1,0,0],beta,delta,[1,0,0],n=n,debug=debug+1)
-        if debug:
-          print(debug * "  "+"2nd Factor and resulting intermediate product:",sign *calculate_wigner_6j_two_quarks(alpha_prime,rho,[1,0,0],beta,delta,[1,0,0],n=n,debug=False),product)
-        sign2 = 1#check_vertex_sign(2,beta,rho,alpha,[1,0,0],[2,1,0],[1,0,0])
-        product *= Wigner6j(beta,rho,alpha,[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n=n,debug=debug+1)
-        if debug:
-          print(debug * "  "+"3rd Factor and resulting intermediate product and current total:",Wigner6j(beta,rho,alpha,[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n,False),product)
-        if solution == 0:
-          solution = product
-        else:
-          solution += product
-        if debug:
-          print(debug * "  "+"Current total:",solution)
-  return solution
-
-def calculate_6j_with_quark_gluon_opposing_conjugate(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
-  """
-  Calculates a case 2 6j-symbol.
-  """
-  if(debug):
-    print((debug-1) * "  "+"QuarkGluonOpposingConjugate", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4) 
-  alpha_primes = find_child_diagram(delta, epsilon)
-  if debug:
-    print(debug * "  "+"Possible alpha_primes",alpha_primes)
-  if len(alpha_primes)<v4:
+  if(alpha != gamma and beta == lambdaks[0]):
+    return Fraction(1,1,1,get_dimension(beta, n)*(n**2-1)).reduce()
+  elif(alpha != gamma):
     return 0
-  alpha_prime = alpha_primes[v4-1]
-  intermediates_1 = find_intermediate_diagrams(alpha_prime,alpha_prime)
-  intermediates_2 = young_multiplication_antiquark(alpha)
-  intermediates_3 = young_multiplication_antiquark(beta)
-  if debug:
-    print(debug * "  "+"All intermediates, rho should be in all of these",intermediates_1, intermediates_2, intermediates_3)
+  intermediates = find_intermediate_diagrams(alpha, alpha, False)
+  k=0
+  for i in range(len(intermediates)):
+    if intermediates[i] == beta:
+      k = i+1
+  if(k==0):
+    print("Problem in Quark Gluon", alpha, beta, gamma, intermediates)
+    return 0
+  #k = find_changed_index(alpha, beta)+1
+  if(v2==1):
+    if debug:
+      print(k, scalar_product(1,k,alpha,n),scalar_product(1,1,alpha,n))
+    return scalar_product(1,k,alpha,n) / Fraction.sqrt(scalar_product(1,1,alpha,n))
+  if(v2==2):
+    #print(Fraction.sqrt(scalar_product(1,1,alpha,n)/(scalar_product(1,1,alpha,n)*scalar_product(2,2,alpha,n)-Fraction.sq(scalar_product(1,2,alpha,n)))))
+    #print((scalar_product(2,k,alpha,n)),(scalar_product(1,2,alpha,n)/scalar_product(1,1,alpha,n)*scalar_product(1,k,alpha,n)))
+    divisor = scalar_product(1,1,alpha,n)*scalar_product(2,2,alpha,n) - Fraction.sq(scalar_product(1,2,alpha,n))
+    bracket = (scalar_product(2,k,alpha,n)-((scalar_product(1,2,alpha,n)/scalar_product(1,1,alpha,n))*scalar_product(1,k,alpha,n)))
+    if(debug):
+      print("s11:",scalar_product(1,1,alpha,n),"s22",scalar_product(2,2,alpha,n) ,"s12",scalar_product(1,2,alpha,n),"s12",scalar_product(2,1,alpha,n),"k", k, "divisor: ", divisor, "bracket",bracket)
+
+    if(bracket == 0):
+      return 0
+    if(divisor == 0):
+      return "COMPLEX INFINITY"
+    return Fraction.sqrt(scalar_product(1,1,alpha,n)/divisor)*bracket
+
+def calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
+  """
+  Calculates a case 2 6j-symbol.
+  """
+  if(debug):
+    print("QuarkGluonOpposing", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4) 
   solution = Fraction()
-  for rho in intermediates_1:
-    if rho in intermediates_2 and rho in intermediates_2:
-      if debug:
-        print(debug * "  "+"rho:",rho)
-      product = Fraction(1,get_dimension(rho,n))
-      if debug:
-        print(debug * "  "+"Pre-Factor of Triple Product",product)
-      sign = check_vertex_sign([1,2,3,4],epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],1,1,1,1)
-      product *= sign*calculate_wigner_6j_two_quarks(epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],n=n,debug=debug+1)
-      if debug:
-        print(debug * "  "+"1st Factor and resulting intermediate product:",sign*calculate_wigner_6j_two_quarks(epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],n=n,debug=False),product)
-      product *= calculate_wigner_6j_two_quarks(rho,beta,[1,0,0],delta,alpha_prime,[1,0,0],n=n,debug=debug+1)
-      if debug:
-        print(debug * "  "+"2nd Factor and resulting intermediate product:",calculate_wigner_6j_two_quarks(rho,beta,[1,0,0],delta,alpha_prime,[1,0,0],n=n,debug=False),product)
-      product *= calculate_6j_with_quark_gluon_vertex(conjugate(beta,3),conjugate(rho,3),conjugate(alpha,3),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n,debug+1)
-      if debug:
-        print(debug * "  "+"3rd Factor and resulting intermediate product:",calculate_6j_with_quark_gluon_vertex(conjugate(beta,3),conjugate(rho,3),conjugate(alpha,3),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n),product)
-      solution += product
+  for j in range(1,v4+1):
+    for k in range(1,v3+1):
+      c1 = calculate_coefficient(epsilon,delta,v4,j,n, debug)
+      c2 = calculate_coefficient(beta, alpha,v3,k,n, debug)
+      if(c1 == "INFINITY" or c2 == "INFINITY"):
+        return "COMPLEX INFINITY"
+      myks = find_intermediate_diagrams(alpha, beta)
+      #print(myks)
+      if((k>= len(myks) and len(myks)>1) or len(myks)==0 or k > len(myks)):
+        continue
+      lambdajs = find_intermediate_diagrams(delta, epsilon)
+      #print(lambdajs)
+      if((j>= len(lambdajs) and len(lambdajs)>1) or len(lambdajs)==0 or j > len(lambdajs)):
+        continue
+      myk = myks[k-1]
+      lambdaj = lambdajs[j-1]
+      #if(debug):
+        #print("myk", myk,"lambdaj", lambdaj)
+      if(myk == False or lambdaj == False):
+        continue
+      w1 = calculate_wigner_6j_two_quarks(conjugate(lambdaj, n),conjugate(delta, n),[1,0,0],conjugate(beta, n),conjugate(myk, n),[1,0,0],1,1,1,1,n,debug)
+      w2 = calculate_wigner_6j_two_quarks(alpha,myk,[1,0,0],lambdaj,epsilon,[1,0,0],1,1,1,1,n,debug)
+      #print(w1,"test",w2)
+      if(w1 == "COMPLEX INFINITY" or w2 == "COMPLEX INFINITY"):
+        return "COMPLEX INFINITY"
+      if(c1 == None or c2 == None or w1 == None or w2 == None):
+        continue
+      bracket = w1*w2
+      partialsum = (c1*c2)/(n**2-1) * bracket
+      if(kronecker_delta(alpha,beta)*kronecker_delta(delta, epsilon)==1):
+        bracket -= Fraction(1,(n*get_dimension(delta,n)*get_dimension(alpha,n)))
+      if(solution == None or partialsum == None):
+        continue
+      solution += partialsum
+      if(debug):
+        if(kronecker_delta(alpha,beta)*kronecker_delta(delta, epsilon)==1):
+          print("QuarkGluon Calculation: ", partialsum, "=", c1,"*",c2,"/",(n**2-1)," *",bracket, ", last term is: ",w1,"*",w2,"-",Fraction(1,(n*get_dimension(delta,n)*get_dimension(alpha,n))))
+        else:
+          print("QuarkGluon Calculation: ", partialsum, "=", c1,"*",c2,"/",(n**2-1)," *",bracket, ", last term is: ",w1,"*",w2)
+  if(debug):
+    print("QuarkGluon6j: ",solution)
   return solution
 
-def calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False, include_coefficient=True):
+def calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug=False):
   """
   Calculates a case 3 6j-symbol.
   """
-  if(debug):
-    print("TwoGluon", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4) 
-  alpha_primes = find_intermediate_diagrams(delta, epsilon)
-  #print(alpha_primes, delta, epsilon,v4)
-  #
-  # Conjuagte Case
-  #
-  if type(v4) == str:
-    index = int(v4[0])
-    intermediates = find_child_diagram(alpha,gamma)
-    length = len(intermediates)-1
-    if length == 0:
-      length = 1
-    alpha_prime = intermediates[index-1]
-    intermediates_1 = young_multiplication_gluon(alpha_prime, True)
-    intermediates_2 = young_multiplication_antiquark(alpha)
-    intermediates_3 = young_multiplication_antiquark(beta)
-    solution = Fraction()
-    for rho in intermediates_1:
-      if rho in intermediates_2 and rho in intermediates_3:
-        product = Fraction(1,get_dimension(rho,n))
-        if rho == alpha_prime and is_real(rho):
-          sum_over_vertices = [1,"1+"]
-        if rho == alpha_prime and not is_real(rho):
-          sum_over_vertices = [1,"1c",2,"2c"]
-        if rho != alpha_prime:
-          sum_over_vertices = [1]
-        factor_1 = 0
-        factor_2 = 0
-        for vertex in sum_over_vertices:
-          factor_1 += calculate_6j_with_quark_gluon_opposing(epsilon,alpha,[1,0,0],rho,alpha_prime,[1,0,0],1,1,v2,vertex,n)
-          factor_2 += calculate_6j_with_quark_gluon_opposing(beta,delta,[1,0,0],alpha_prime,rho,[1,0,0],1,1,v1,vertex,n)
-        product *= factor_1
-        product *= factor_2
-        product *= calculate_6j_with_quark_gluon_vertex(conjugate(alpha,n),conjugate(rho,n),conjugate(beta,n),[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n=n)
-        solution += product
-  #
-  # NORMAL Case
-  #
-  else:
-    if len(alpha_primes)<=v4:
-      return 0
-    alpha_prime = alpha_primes[v4-1]
-    intermediates_1 = young_multiplication_gluon(alpha_prime)
-    intermediates_2 = find_intermediate_diagrams(alpha,alpha)
-    intermediates_3 = find_intermediate_diagrams(beta,beta)
-    solution = Fraction()
-    for rho in intermediates_1:
-      if rho in intermediates_2 and rho in intermediates_3:
-        product = Fraction(1,get_dimension(rho,n))
-        if rho == alpha_prime and is_real(rho):
-          sum_over_vertices = [1,"1+"]
-        if rho == alpha_prime and not is_real(rho):
-          sum_over_vertices = [1,"1c",2,"2c"]
-        if rho != alpha_prime:
-          sum_over_vertices = [1]
-        factor_1 = 0
-        factor_2 = 0
-        for vertex in sum_over_vertices:
-          factor_1 += calculate_6j_with_quark_gluon_opposing(epsilon,alpha,[1,0,0],rho,alpha_prime,[2,1,0],1,1,v2,vertex,n=n)
-          factor_2 += calculate_6j_with_quark_gluon_opposing(conjugate(delta,n),conjugate(beta,n),[1,0,0],conjugate(rho,n),conjugate(alpha_prime,n),[2,1,0],1,1,v1,vertex,n=n)
-        product *= factor_1
-        product *= factor_2
-        product *= calculate_6j_with_quark_gluon_vertex(beta,rho,alpha,[1,0,0],[2,1,0],[1,0,0],1,v3,1,1,n=n)
-        solution += product
-  return solution
   if(debug):
     print("TwoGluon", alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4)
   solution = Fraction()
@@ -1363,123 +1144,43 @@ def Wigner6j(alpha=None, beta=None, gamma=None, delta=None, epsilon=None, zeta=N
   The return is of type Fraction as is defined at the start of the file. 
   """
   if(debug):
-    print((debug-1) * "  "+"INPUT: " ,alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n)
+    print("INPUT: " ,alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n)
   if(isinstance(alpha, bool) or isinstance(beta, bool) or isinstance(gamma, bool) or isinstance(delta, bool) or isinstance(epsilon, bool) or isinstance(zeta, bool)):
     return 0
   solution = False
   if(v1 == "f"):
-    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 1, v2, v3, v4, n, debug+1) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 2, v2, v3, v4, n, debug+1)
+    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 1, v2, v3, v4, n, debug) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 2, v2, v3, v4, n, debug)
   if(v1 == "d"):
-    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 1, v2, v3, v4, n, debug+1) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 2, v2, v3, v4, n, debug+1)
+    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 1, v2, v3, v4, n, debug) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, 2, v2, v3, v4, n, debug)
   if(v2 == "f"):
-    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug+1) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 2, v3, v4, n, debug+1)
+    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 2, v3, v4, n, debug)
   if(v2 == "d"):
-    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug+1) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v2, 2, v3, v4, n, debug+1)
+    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v2, 2, v3, v4, n, debug)
   if(v3 == "f"):
-    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 1, v4, n, debug+1) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 2, v4, n, debug+1)
+    return Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 1, v4, n, debug) + Fraction(-1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 2, v4, n, debug)
   if(v3 == "d"):
-    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 1, v4, n, debug+1) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v2, v2, 2, v4, n, debug+1)
-  if(is_6j_with_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1)):
-    solution = calculate_wigner_6j_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1)
-  if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
-    return solution
-  elif(is_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1) ):
-    if alpha != gamma:
-      solution = calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1)
-    if alpha == gamma and not is_real(alpha):
-      match v2:
-        case 1:
-          if get_number_of_boxes(alpha) > get_number_of_boxes(conjugate(alpha,n)):
-            solution = calculate_coefficient(conjugate(alpha,n),conjugate(gamma,n),1,1,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1c", v3, v4, n, debug+1, include_coefficient=False)
-          else:
-            solution = calculate_coefficient(alpha,gamma,1,1,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1, include_coefficient=False)
-        case 2:
-          if get_number_of_boxes(alpha) > get_number_of_boxes(conjugate(alpha,n)):
-            print("Test",calculate_coefficient(conjugate(alpha,n),conjugate(gamma,n),2,1,n) , calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1c", v3, v4, n, False, include_coefficient=False),calculate_coefficient(conjugate(alpha,n),conjugate(gamma,n),2,2,n) , calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "2c", v3, v4, n, debug, include_coefficient=False))
-            solution = calculate_coefficient(conjugate(alpha,n),conjugate(gamma,n),2,1,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1c", v3, v4, n, debug+1, include_coefficient=False)
-            solution += calculate_coefficient(conjugate(alpha,n),conjugate(gamma,n),2,2,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "2c", v3, v4, n, debug+1, include_coefficient=False)
-          else:
-            print(calculate_coefficient(alpha,gamma,2,1,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, False, include_coefficient=False),calculate_coefficient(alpha,gamma,2,2,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 2, v3, v4, n, debug, include_coefficient=False))
-            solution =  calculate_coefficient(alpha,gamma,2,1,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug+1, include_coefficient=False)
-            solution += calculate_coefficient(alpha,gamma,2,2,n) * calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 2, v3, v4, n, debug+1, include_coefficient=False)
+    return Fraction(1,1,n-2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, 1, v4, n, debug) + Fraction(-1,1,n+2,2*n) * Wigner6j(alpha, beta, gamma, delta, epsilon, zeta, v2, v2, 2, v4, n, debug)
 
-    if alpha == gamma and is_real(alpha):
-      match v2:
-        case "1+":
-          print(debug * "  "+"Values: ",calculate_normalization_plus(alpha, find_intermediate_diagrams(alpha,alpha)[0], n, False) , (calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, False, include_coefficient=False) , calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1f", v3, v4, n, False, include_coefficient=False)))
-          solution = calculate_normalization_plus(alpha, find_intermediate_diagrams(alpha,alpha)[0], n, debug+1) * (calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug+1, include_coefficient=False) + calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1f", v3, v4, n, debug+1, include_coefficient=False))
-        case 1:
-          solution = calculate_normalization_minus(alpha, find_intermediate_diagrams(alpha,alpha)[0], n, debug+1) * (calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug+1, include_coefficient=False) - calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, "1f", v3, v4, n, debug+1, include_coefficient=False))
+  if(is_6j_with_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)):
+    solution = calculate_wigner_6j_two_quarks(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
   if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
     return solution
-  solution = is_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1)
-  if(solution):
-    if epsilon != delta:
-      print(debug * "  "+"Coeff",calculate_coefficient(epsilon,delta,1,1,n))
-      solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug+1)
-    if epsilon == delta and not is_real(epsilon):
-      match v4:
-        case 1:
-          if get_number_of_boxes(epsilon) > get_number_of_boxes(conjugate(epsilon,n)):
-            solution = calculate_coefficient(conjugate(epsilon,n),conjugate(delta,n),1,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1c", n, debug, include_coefficient=False)
-          else:
-            solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 1, n, debug, include_coefficient=False)
-        case "1c":
-          solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1c", n, debug, include_coefficient=False)
-        case 2:
-          if get_number_of_boxes(epsilon) > get_number_of_boxes(conjugate(epsilon,n)):
-            solution = calculate_coefficient(conjugate(epsilon,n),conjugate(delta,n),2,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1c", n, debug, include_coefficient=False)
-            solution += calculate_coefficient(conjugate(epsilon,n),conjugate(delta,n),2,2,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "2c", n, debug, include_coefficient=False)
-          else:
-            solution = calculate_coefficient(epsilon,delta,2,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 1, n, debug, include_coefficient=False)
-            solution += calculate_coefficient(epsilon,delta,2,2,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 2, n, debug, include_coefficient=False)
-        case "2c":
-          solution = calculate_coefficient(epsilon,delta,2,1,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1c", n, debug, include_coefficient=False)
-          solution += calculate_coefficient(epsilon,delta,2,2,n) * calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "2c", n, debug, include_coefficient=False)
-    if epsilon == delta and is_real(epsilon):
-      match v4:
-        case "1+":
-          print(debug * "  "+"Values",calculate_normalization_plus(epsilon, find_intermediate_diagrams(epsilon,epsilon)[0], n, debug),calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 1, n, debug, include_coefficient=False),calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1f", n, debug, include_coefficient=False))
-          solution = calculate_normalization_plus(epsilon, find_intermediate_diagrams(epsilon,epsilon)[0], n, debug) * (calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 1, n, debug, include_coefficient=False) + calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1f", n, debug, include_coefficient=False))
-        case 1:
-          solution = calculate_normalization_minus(epsilon, find_intermediate_diagrams(epsilon,epsilon)[0], n, debug) * (calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, 1, n, debug, include_coefficient=False) - calculate_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, "1f", n, debug, include_coefficient=False))
+  elif(is_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug) ):
+    solution = calculate_6j_with_quark_gluon_vertex(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
+  if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
+    return solution
+  solution = is_6j_with_quark_gluon_opposing(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
+  if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
     return solution
   solution = is_6j_with_three_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
   if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
     return solution
-  #
-  #
-  elif(is_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug) ):
-    if epsilon != delta:
-      solution = calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
-    if epsilon == delta and not is_real(delta):
-      match v2:
-        case 1:
-          solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug, include_coefficient=False)
-        case "1c":
-          solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, "1c", v3, v4, n, debug, include_coefficient=False)
-        case 2:
-          #if(len(find_intermediate_diagrams(alpha,alpha))<3):
-           # return 0
-          solution =  calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, 1, v3, v4, n, debug, include_coefficient=False)
-          solution += calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, 2, v3, v4, n, debug, include_coefficient=False)
-        case "2c":
-          solution = calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, "1c", v3, v4, n, debug, include_coefficient=False)
-          solution += calculate_coefficient(epsilon,delta,1,1,n) * calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, "2c", v3, v4, n, debug, include_coefficient=False)
-    if epsilon == gamma and is_real(epsilon):
-      match v2:
-        case "1+":
-          solution = calculate_normalization_plus(epsilon, find_intermediate_diagrams(epsilon,epsilon)[0], n, debug) * (calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug, include_coefficient=False) + calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, "1f", v3, v4, n, debug, include_coefficient=False))
-        case 1:
-          solution = calculate_normalization_minus(epsilon, find_intermediate_diagrams(epsilon,epsilon)[0], n, debug) * (calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug, include_coefficient=False) - calculate_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, "1f", v3, v4, n, debug, include_coefficient=False))
+  solution = is_6j_with_two_gluon(alpha, beta, gamma, delta, epsilon, zeta, v1, v2, v3, v4, n, debug)
   if(solution != False or (solution == 0 and (type(solution) == int or type(solution) == Fraction))):
     return solution
-
-  #
-  #
-  #
-
   return solution
+
+
 
 
 
