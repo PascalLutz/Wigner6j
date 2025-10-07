@@ -51,9 +51,9 @@ class TestVertex(unittest.TestCase):
         self.assertTrue(hasattr(vertex, 'young_diagram_2'))
         self.assertTrue(hasattr(vertex, 'young_diagram_3'))
 
-        self.assertEqual(vertex.young_diagram_1, self.trivial_diagram)
-        self.assertEqual(vertex.young_diagram_2, self.trivial_diagram)
-        self.assertEqual(vertex.young_diagram_3, self.trivial_diagram)
+        self.assertEqual(vertex.young_diagram_1, pr.YoungDiagram(()))
+        self.assertEqual(vertex.young_diagram_2, pr.YoungDiagram(()))
+        self.assertEqual(vertex.young_diagram_3, pr.YoungDiagram(()))
 
     def test_is_well_defined_method_exists(self):
         """Test that is_well_defined method exists and returns boolean."""
@@ -70,6 +70,24 @@ class TestVertex(unittest.TestCase):
         except Exception:
             # If it raises an exception due to missing dependencies, that's expected
             pass
+
+    def test_valid_vertex(self):
+        """Test a valid vertex configuration."""
+        vertex = Vertex(self.trivial_diagram, self.trivial_diagram, self.trivial_diagram, 1)
+        self.assertTrue(vertex.is_well_defined())
+
+        vertex = Vertex(self.gluon_diagram, self.gluon_diagram, self.gluon_diagram, 1)
+        self.assertTrue(vertex.is_well_defined())
+
+
+    def test_invalid_vertex(self):
+        """Test an invalid vertex configuration."""
+        vertex = Vertex(self.trivial_diagram, self.trivial_diagram, self.gluon_diagram, 1)
+        self.assertFalse(vertex.is_well_defined())
+
+        vertex = Vertex(self.quark_diagram, self.gluon_diagram, self.complex_diagram, 1)
+        self.assertFalse(vertex.is_well_defined())
+
 
 
 if __name__ == '__main__':
