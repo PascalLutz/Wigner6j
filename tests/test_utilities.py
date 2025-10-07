@@ -15,9 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from wigner_new import (
     kronecker_delta, is_quark, is_adjoint, is_gluon, is_real, is_viable_diagram,
-    check_vertex_sign, is_6j_with_two_quarks, is_6j_with_quark_gluon_vertex,
-    is_6j_with_quark_gluon_opposing, is_6j_with_two_gluon, is_6j_with_three_gluon,
-    conjugate_diagram, create_fractions_array
+    check_vertex_sign, 
+    conjugate_diagram, 
+    create_fractions_array
 )
 
 
@@ -211,51 +211,6 @@ class TestUtilityFunctions(unittest.TestCase):
             )
             self.assertIsInstance(result, (int, float, type(None)))
     
-    def test_6j_type_classification_functions(self):
-        """Test 6j-symbol type classification functions."""
-        # Standard test parameters
-        v1, v2, v3, v4, n = 1, 1, 1, 1, 3
-        
-        # Test is_6j_with_two_quarks
-        result = is_6j_with_two_quarks(
-            self.quark, self.quark, self.symmetric,
-            self.quark, self.quark, self.symmetric,
-            v1, v2, v3, v4, n, debug=False
-        )
-        self.assertIsInstance(result, bool)
-        
-        # Test is_6j_with_quark_gluon_vertex
-        result = is_6j_with_quark_gluon_vertex(
-            self.quark, self.gluon, self.quark,
-            self.antiquark, self.gluon, self.antiquark,
-            v1, v2, v3, v4, n, debug=False
-        )
-        self.assertIsInstance(result, bool)
-        
-        # Test is_6j_with_quark_gluon_opposing
-        result = is_6j_with_quark_gluon_opposing(
-            self.quark, self.gluon, self.quark,
-            self.quark, self.gluon, self.quark,
-            v1, v2, v3, v4, n, debug=False
-        )
-        self.assertIsInstance(result, bool)
-        
-        # Test is_6j_with_two_gluon
-        result = is_6j_with_two_gluon(
-            self.gluon, self.gluon, self.trivial,
-            self.gluon, self.gluon, self.trivial,
-            v1, v2, v3, v4, n, debug=False
-        )
-        self.assertIsInstance(result, bool)
-        
-        # Test is_6j_with_three_gluon
-        result = is_6j_with_three_gluon(
-            self.gluon, self.gluon, self.gluon,
-            self.gluon, self.gluon, self.gluon,
-            v1, v2, v3, v4, n, debug=False
-        )
-        self.assertIsInstance(result, bool)
-    
     def test_particle_type_consistency(self):
         """Test consistency between particle type functions."""
         # Test various representations
@@ -337,25 +292,6 @@ class TestUtilityFunctions(unittest.TestCase):
             # For SU(3), conjugation preserves certain relationships
             self.assertGreaterEqual(conjugated_boxes, 0)
     
-
-    def test_debug_mode_compatibility(self):
-        """Test that functions work properly with debug mode."""
-        # Test classification functions with debug=True
-        v1, v2, v3, v4, n = 1, 1, 1, 1, 3
-        
-        result = is_6j_with_two_quarks(
-            self.quark, self.quark, self.symmetric,
-            self.quark, self.quark, self.symmetric,
-            v1, v2, v3, v4, n, debug=True
-        )
-        self.assertIsInstance(result, bool)
-        
-        result = is_6j_with_quark_gluon_vertex(
-            self.quark, self.gluon, self.quark,
-            self.antiquark, self.gluon, self.antiquark,
-            v1, v2, v3, v4, n, debug=True
-        )
-        self.assertIsInstance(result, bool)
 
 
 if __name__ == '__main__':
