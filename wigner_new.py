@@ -73,9 +73,9 @@ class Fraction:
     if isinstance(other, Fraction):
       return Fraction(self.nominator * other.denominator - other.nominator * self.denominator, self.denominator * other.denominator).reduce()
     elif isinstance(other, int):
-      return Fraction(other * self.denominator - self.nominator, self.denominator).reduce()
+      return Fraction(self.nominator - other * self.denominator, self.denominator).reduce()
     elif isinstance(other, float):
-      return Fraction(other * self.denominator - self.nominator, self.denominator).reduce()
+      return Fraction(self.nominator - other * self.denominator , self.denominator).reduce()
 
   def __rsub__(self, other):
     return self.__sub__(other)
