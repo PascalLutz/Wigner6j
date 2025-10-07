@@ -13,6 +13,10 @@ oldcode.py
 # C extensions
 *.so
 
+# Notebooks
+*.ipynb_checkpoints
+*.ipynb
+
 # Distribution / packaging
 .Python
 build/

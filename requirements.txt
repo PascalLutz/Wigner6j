@@ -1,0 +1,2 @@
+numpy
+pair_multiplication
