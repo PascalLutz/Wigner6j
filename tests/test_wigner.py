@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from wigner_new import Wigner
-
+from wigner_new import Fraction
 
 class TestWigner(unittest.TestCase):
     """Test cases for the Wigner class."""
@@ -30,7 +30,20 @@ class TestWigner(unittest.TestCase):
     def test_initialise_simple(self):
         """Test Wigner Initialisation with simple diagrams."""
 
-        self.assertTrue(True)  # Placeholder assertion
+        #Case 0
+        self.assertEqual(Wigner((2),(3),(1),(2),(1),(1),1,1,1,1,3),Fraction(1,6,1,1))
+        self.assertEqual(Wigner((3,1),(2),(1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,1,1,48).reduce())
+        self.assertEqual(Wigner((1),(1,1),(1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,6,1,1))
+        
+        
+        
+    def test_case_1_symbols(self):# Case 1
+        """Test Wigner 6j-symbols of Case 1."""
+        
+        # Vertex 1 alpha=gamma and real
+        self.assertEqual(Wigner((2,1),(2,2),(2,1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,8,-5,6))
+        self.assertEqual(Wigner((4,2),(4,3),(4,2),(1),(2,1),(1),1,1,1,1,3),Fraction(1,72,35,2))
+        self.assertEqual(Wigner((4,2),(5,2),(4,2),(1),(2,1),(1),1,1,1,1,3),Fraction(1,36,5,14))
 
 
 if __name__ == '__main__':
