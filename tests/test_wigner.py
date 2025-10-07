@@ -31,9 +31,9 @@ class TestWigner(unittest.TestCase):
         """Test Wigner Initialisation with simple diagrams."""
 
         #Case 0
-        self.assertEqual(Wigner((2),(3),(1),(2),(1),(1),1,1,1,1,3),Fraction(1,6,1,1))
-        self.assertEqual(Wigner((3,1),(2),(1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,1,1,48).reduce())
-        self.assertEqual(Wigner((1),(1,1),(1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,6,1,1))
+        self.assertEqual(Wigner((2),(3),(1),(2),(1),(1),1,1,1,1,3).get_value(),Fraction(1,6,1,1))
+        self.assertEqual(Wigner((3,1),(2),(1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,1,1,48).reduce())
+        self.assertEqual(Wigner((1),(1,1),(1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,6,1,1))
         
         
         
@@ -41,9 +41,9 @@ class TestWigner(unittest.TestCase):
         """Test Wigner 6j-symbols of Case 1."""
         
         # Vertex 1 alpha=gamma and real
-        self.assertEqual(Wigner((2,1),(2,2),(2,1),(1),(2,1),(1),1,1,1,1,3),Fraction(1,8,-5,6))
-        self.assertEqual(Wigner((4,2),(4,3),(4,2),(1),(2,1),(1),1,1,1,1,3),Fraction(1,72,35,2))
-        self.assertEqual(Wigner((4,2),(5,2),(4,2),(1),(2,1),(1),1,1,1,1,3),Fraction(1,36,5,14))
+        self.assertEqual(Wigner((2,1),(2,2),(2,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,8,-5,6))
+        self.assertEqual(Wigner((4,2),(4,3),(4,2),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,72,35,2))
+        self.assertEqual(Wigner((4,2),(5,2),(4,2),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,36,5,14))
 
 
 if __name__ == '__main__':

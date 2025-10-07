@@ -364,44 +364,50 @@ class Wigner:
       self.value =  values[0] #TODO Implement
     return self.value
 
-  def calculate_wigner_6j_two_quarks(self, n=3, debug=True):
+  def calculate_wigner_6j_two_quarks(self, n=3, debug=False):
     """
     Calculates a case 0 6j-symbol.
     """
     if(debug):
       print(debug * "  "+"TwoQuarkSymbol", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta)
-    j = find_changed_index(self.epsilon, self.delta)
-    i = find_changed_index(self.epsilon, self.alpha)
-    j2 = find_changed_index(self.alpha, self.beta)
-    i2 = find_changed_index(self.delta, self.beta)
-    #if(debug):
-      #print(i,j,i2,j2,alpha, beta, delta,epsilon)
+    j = find_changed_index(self.epsilon.partition, self.delta.partition)
+    i = find_changed_index(self.epsilon.partition, self.alpha.partition)
+    j2 = find_changed_index(self.alpha.partition, self.beta.partition)
+    i2 = find_changed_index(self.delta.partition, self.beta.partition)
+    if(debug):
+      print(i,j,i2,j2,self.alpha, self.beta, self.delta,self.epsilon)
     if(j==-1 or i==-1 or j2==-1 or i2==-1):
       return 0
-    if(j==i and j==j2 and j==i2):
+    if(j==i and j==j2 and j==i2): #Siiii
       return Fraction(1,self.alpha.dimension_Nc(Nc=n))
-    if(j==i and i2==j2 and j<j2):
-      return Fraction(-1,self.alpha.dimension_Nc(Nc=n)) * Fraction(1,get_hooklength(self.epsilon, j+1, self.epsilon[j2] + 1)+1)
-    if(j==i and i2==j2 and j>j2):
-      return Fraction(1,self.alpha.dimension_Nc(Nc=n)) * Fraction(1,get_hooklength(self.epsilon, j2+1, self.epsilon[j] + 1)+1)
-    if(j==j2 and i==i2 and i!=j):
+    if(j==i and i2==j2 and j<j2): #Sijii
+      if j2 >= len(self.epsilon.partition):
+        column = 1
+      else: column = self.epsilon.partition[j2] + 1
+      return Fraction(-1,self.alpha.dimension_Nc(Nc=n)) * Fraction(1,get_hooklength(self.epsilon.partition, j+1, column)+1)
+    if(j==i and i2==j2 and j>j2): #Sijjj
+      if j >= len(self.epsilon.partition):
+        column = 1
+      else: column = self.epsilon.partition[j] + 1
+      return Fraction(1,self.alpha.dimension_Nc(Nc=n)) * Fraction(1,get_hooklength(self.epsilon.partition, j2+1, column)+1)
+    if(j==j2 and i==i2 and i!=j): #Sijij and Sijji
       if(i<j):
         return Fraction(1,1,1,self.epsilon.dimension_Nc(Nc=n)*self.beta.dimension_Nc(Nc=n)).reduce()
       else:
         return Fraction(1,1,1,self.epsilon.dimension_Nc(Nc=n)*self.beta.dimension_Nc(Nc=n)).reduce()
     return False
 
-  def calculate_6j_with_quark_gluon_vertex(self, n=3, debug=False, include_coefficient=True):
+  def calculate_6j_with_quark_gluon_vertex(self, n=3, debug=True, include_coefficient=True):
     """
     Calculates a case 1 6j-symbol.
     """
     if(debug):
-      print(debug * "  "+"QuarkGluon", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1, self.vertex_2, self.vertex_3, self.vertex_4)
+      print(debug * "  "+"QuarkGluon", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number)
     lambdaks = self.alpha.LR_multiply(self.gamma).elements
     if(len(lambdaks) == 0 or type(lambdaks) == bool):
       return 0
     if type(self.vertex_2) == str:
-      possible_intermediates = self.alpha.LR_multiply(self.gamma).elements
+      possible_intermediates = find_intermediate_diagrams(self.alpha,self.gamma)
       index = int(self.vertex_2[0])-1
       intermediate = possible_intermediates[index]
       alpha_prime = conjugate(intermediate,n)
@@ -418,8 +424,9 @@ class Wigner:
         print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,Fraction(1,n**2-1),(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() , Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
       return Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
     else:
-      intermediates = self.alpha.LR_multiply(self.gamma).elements
+      intermediates = find_intermediate_diagrams(self.alpha,self.gamma)
       index = self.vertex_expansion-1
+      print(intermediates, index, self.alpha, self.gamma)
       if debug:
         print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(n)) ,"-", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(n))))
       if include_coefficient:
@@ -926,7 +933,12 @@ def add_box_to_diagram(diagram, rowToAdd):
   Returns the diagram if it is admissable.
   Returns False is the diagram is not admissable.
   """
-  newDiagram = diagram.copy()
+  diagrams = diagram.LR_multiply(YoungDiagram(1)).elements
+  for elem in diagrams:
+    if find_changed_index(elem.partition,diagram.partition) == rowToAdd+1:
+      return elem
+  return False
+  newDiagram = list(diagram)
   newDiagram[rowToAdd - 1] += 1
   if rowToAdd > 1:
     if newDiagram[rowToAdd - 1] > newDiagram[rowToAdd - 2]:
@@ -934,7 +946,7 @@ def add_box_to_diagram(diagram, rowToAdd):
   if rowToAdd == len(newDiagram):
     for i in range(len(newDiagram)):
       newDiagram[i] -= 1
-  if(is_viable_diagram(newDiagram)):
+  if is_viable_diagram(newDiagram):
     return newDiagram
   else: return False
 
@@ -944,17 +956,25 @@ def remove_box_from_diagram(diagram, rowToRemove):
 
   Returns the diagram if it is admissable and False otherwise.
   """
-  newDiagram = diagram.copy()
-  if(newDiagram[rowToRemove - 1] == 0):
+  diagrams = diagram.LR_multiply(YoungDiagram(1,1)).elements
+  print(diagrams)
+  for elem in diagrams:
+    if find_changed_index(elem.partition,diagram.partition) == rowToRemove+1:
+      return elem
+  return False
+  newDiagram = list(diagram)
+  if len(newDiagram) == 1 and rowToRemove == 2:
+    return False
+  if rowToRemove == 3 or newDiagram[rowToRemove - 1] == 0:
     for i in range(len(diagram)-1):
       newDiagram[i] += 1
     return newDiagram
   newDiagram[rowToRemove - 1] -= 1
   if rowToRemove > 1:
-    if(rowToRemove<len(diagram)):
+    if rowToRemove<3:
       if newDiagram[rowToRemove - 1] < newDiagram[rowToRemove]:
         return False
-  if(is_viable_diagram(newDiagram)):
+  if is_viable_diagram(newDiagram):
     return newDiagram
   else: return False
 
@@ -1037,33 +1057,24 @@ def find_changed_index(alpha, beta):
   Returns -1 if beta can not be constructed by adding a box to alpha.
   """
   index = -1
-  reduction = True
-  firstOccurence = True
-  singleBox = True
-  n = min(len(alpha.partition),len(beta.partition))
+  n = max(len(alpha),len(beta))
   counter = 0
   for i in range(n):
-    if(abs(alpha.partition[i]-beta.partition[i])==1):
+    if i > len(alpha)-1:
+      value1 = 0
+    else: value1 = alpha[i]
+    if i > len(beta)-1:
+      value2 = 0
+    else: value2 = beta[i]
+    if(abs(value1-value2)==1):
       counter += 1
       index = i
   if(counter==1):
     return index
-  elif(counter==n-1):
-    return n-1
+  elif(counter==2):
+    return 2
   else: 
     return -1
-    if(alpha[i] != beta[i]):
-      if(alpha[i] == beta[i]+1):
-        if(firstOccurence):
-          firstOccurence = False
-          index = i
-        else: singleBox = False
-      else: singleBox = False
-  if(singleBox):
-    return index
-  if(reduction==True and alpha[n-1] == beta[n-1]):
-    return n-1
-  return -1
 
 def find_intermediate_diagram(alpha, beta, index=1):
   """
@@ -1087,6 +1098,22 @@ def find_intermediate_diagram(alpha, beta, index=1):
     return False
   
 def find_intermediate_diagrams(alpha, beta, checkForChargeConjugation=True, index=1):
+  diagrams1 = alpha.LR_multiply(YoungDiagram(1)).elements
+  diagrams2 = beta.LR_multiply(YoungDiagram(1)).elements
+  diagrams3 = [elem for elem in diagrams1 if elem in diagrams2]
+  diagrams3.sort(key=temp_sort_function, reverse=True)
+  print(diagrams1, diagrams2, diagrams3)
+  return diagrams3
+  
+def temp_sort_function(alpha):
+  value = 0
+  base = 100
+  for i in alpha.partition:
+    value+=i*base
+    base=base/10
+  return value
+
+def find_intermediate_diagrams_old(alpha, beta, checkForChargeConjugation=True, index=1):
   """
   Returns all diagrams from which both alpha and beta can be constructed via removing a box. 
   If alpha and beta are equal, index can be used to determine where a box shall be added to alpha.
@@ -1206,19 +1233,16 @@ def scalar_product(j,k,alpha,n=3):
   else : product *= Fraction(-1,n*alpha.dimension_Nc(n))
   return product
 
-def calculate_coefficient(alpha, gamma, a, i, n, debug=True):
+def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
   """
   Returns the coefficients as defined in the gluon-paper.
   """
-  #if(alpha == [0,0,0]): #TODO Compatible with n
-  #  return 0
-  print(alpha, gamma, a, i)
   if(a==1 and i == 2):
     return 0
   if(alpha != gamma):
     if(a == 2 or i == 2):
       return 0
-    lambdas = alpha.LR_multiply(gamma).elements
+    lambdas = find_intermediate_diagrams(alpha, gamma)
     if(len(lambdas) == 0 or type(lambdas) == bool):
       return 0
     lambda1 = lambdas[0]
@@ -1228,8 +1252,8 @@ def calculate_coefficient(alpha, gamma, a, i, n, debug=True):
       return 0
     if(debug):
       #TODO Check if there even is a second vertex
-      print("Coefficient:" , get_dimension(lambda1,n),Fraction(1,1,get_dimension(lambda1,n) * (n**2 -1),1).reduce())
-    return Fraction(1,1,get_dimension(lambda1,n) * (n**2 -1),1).reduce()
+      print("Coefficient:" , lambda1.dimension_Nc(3),Fraction(1,1,lambda1.dimension_Nc(Nc=n) * (n**2 -1),1).reduce())
+    return Fraction(1,1,lambda1.dimension_Nc(Nc=n) * (n**2 -1),1).reduce()
   else:
     diagrams = alpha.LR_multiply(alpha).elements
     if(len(diagrams)>1):
