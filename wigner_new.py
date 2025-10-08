@@ -361,7 +361,8 @@ class Wigner:
       for i in range(len(values)-1):
         if values[i] != values[i+1]:
           print("Values do not agree" , values, self.cases)
-      self.value =  values[0] #TODO Implement
+      print("Following values for Wigner  6j with: ", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion, values)
+      self.value =  values[0] #TODO Implement comparison
     return self.value
 
   def calculate_wigner_6j_two_quarks(self, n=3, debug=False):
@@ -403,7 +404,7 @@ class Wigner:
     """
     if(debug):
       print(debug * "  "+"QuarkGluon", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number)
-    lambdaks = self.alpha.LR_multiply(self.gamma).elements
+    lambdaks = find_intermediate_diagrams(self.alpha, self.alpha)
     if(len(lambdaks) == 0 or type(lambdaks) == bool):
       return 0
     if type(self.vertex_2) == str:
@@ -416,20 +417,21 @@ class Wigner:
       if alpha_prime in intermediates:
         alpha_tilde = alpha_prime
       if debug:
-        print(debug * "  "+"alpha_tilde:",alpha_tilde)
+        print("alpha_tilde:",alpha_tilde)
       sign = check_vertex_sign([1,4],self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],1,1,1,1)
       if include_coefficient:
         return calculate_coefficient(self.alpha,self.gamma,index+1,self.vertex_expansion,n)*Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
       if debug:
-        print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,Fraction(1,n**2-1),(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() , Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
+        print("Calculation of QuarkGluon",include_coefficient,Fraction(1,n**2-1),(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() , Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
       return Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
     else:
       intermediates = find_intermediate_diagrams(self.alpha,self.gamma)
       index = self.vertex_expansion-1
-      print(intermediates, index, self.alpha, self.gamma)
       if debug:
-        print(debug * "  "+"Calculation of QuarkGluon",include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(n)) ,"-", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(n))))
+        print("One",intermediates, index, self.alpha, self.gamma)
+        print("Calculation of QuarkGluon",include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(n)) ,"-", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(n))))
       if include_coefficient:
+        print("!!!",calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
         return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
       return Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
 
@@ -1102,7 +1104,6 @@ def find_intermediate_diagrams(alpha, beta, checkForChargeConjugation=True, inde
   diagrams2 = beta.LR_multiply(YoungDiagram(1)).elements
   diagrams3 = [elem for elem in diagrams1 if elem in diagrams2]
   diagrams3.sort(key=temp_sort_function, reverse=True)
-  print(diagrams1, diagrams2, diagrams3)
   return diagrams3
   
 def temp_sort_function(alpha):
@@ -1222,21 +1223,24 @@ def kronecker_delta(i,j):
   if i==j : return 1
   return 0
 
-def scalar_product(j,k,alpha,n=3):
+def scalar_product(j,k,alpha,n=3, debug=False):
   """
   Returns the scalarproduct as defined in the gluon-paper.
   """
   product = Fraction(1,(n**2)-1)
-  if(kronecker_delta(j,k) and alpha.LR_multiply(alpha).elements[j-1]):
-    #print("j",j,"k",k,Fraction(1,get_dimension(find_intermediate_diagrams(alpha, alpha)[j-1],n)),Fraction(1,n*get_dimension(alpha,n)),Fraction(1,get_dimension(find_intermediate_diagrams(alpha, alpha)[j-2],n)) - Fraction(1,n*get_dimension(alpha,n)))
-    product *= Fraction(1,alpha.LR_multiply(alpha).elements[j-1].dimension_Nc(n),n) - Fraction(1,n*alpha.dimension_Nc(n))
+  if(kronecker_delta(j,k) and isinstance(find_intermediate_diagrams(alpha, alpha)[j-1],YoungDiagram)):
+    if debug:
+      print("Scalar Product: j",j,"k",k,Fraction(1,find_intermediate_diagrams(alpha, alpha)[j-1].dimension_Nc(n)),Fraction(1,n*alpha.dimension_Nc(n)),Fraction(1,find_intermediate_diagrams(alpha, alpha)[j-1].dimension_Nc(n)) - Fraction(1,n*alpha.dimension_Nc(n)))
+    product *= Fraction(1,find_intermediate_diagrams(alpha, alpha)[j-1].dimension_Nc(n)) - Fraction(1,n*alpha.dimension_Nc(n))
   else : product *= Fraction(-1,n*alpha.dimension_Nc(n))
   return product
 
-def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
+def calculate_coefficient(alpha, gamma, a, i, n, debug=True):
   """
   Returns the coefficients as defined in the gluon-paper.
   """
+  if(debug):
+    print("Coefficient Calculation with alpha, gamma:",alpha, gamma,a,i)
   if(a==1 and i == 2):
     return 0
   if(alpha != gamma):
@@ -1255,7 +1259,7 @@ def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
       print("Coefficient:" , lambda1.dimension_Nc(3),Fraction(1,1,lambda1.dimension_Nc(Nc=n) * (n**2 -1),1).reduce())
     return Fraction(1,1,lambda1.dimension_Nc(Nc=n) * (n**2 -1),1).reduce()
   else:
-    diagrams = alpha.LR_multiply(alpha).elements
+    diagrams = find_intermediate_diagrams(alpha, alpha)
     if(len(diagrams)>1):
       if(a == len(diagrams)):
         return 0
