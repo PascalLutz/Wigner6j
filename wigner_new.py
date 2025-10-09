@@ -234,19 +234,31 @@ class Vertex:
   """
   
   def __init__(self, young_diagram_1=[0], young_diagram_2=[0], young_diagram_3=[0], vertex_number = 1):
-    if type(young_diagram_1) == YoungDiagram:
-      self.young_diagram_1 = young_diagram_1
+    if isinstance(young_diagram_1, Vertex):
+      self.young_diagram_1 = young_diagram_1.young_diagram_1
+      self.young_diagram_2 = young_diagram_1.young_diagram_2
+      self.young_diagram_3 = young_diagram_1.young_diagram_3
+      self.vertex_number = young_diagram_1.vertex_number
     else:
-      self.young_diagram_1 = YoungDiagram(young_diagram_1)
-    if type(young_diagram_2) == YoungDiagram:
-      self.young_diagram_2 = young_diagram_2
-    else:
-      self.young_diagram_2 = YoungDiagram(young_diagram_2)
-    if type(young_diagram_3) == YoungDiagram:
-      self.young_diagram_3 = young_diagram_3
-    else:
-      self.young_diagram_3 = YoungDiagram(young_diagram_3)
-    self.vertex_number = vertex_number
+      if type(young_diagram_1) == YoungDiagram:
+        self.young_diagram_1 = young_diagram_1
+      else:
+        self.young_diagram_1 = YoungDiagram(young_diagram_1)
+      if type(young_diagram_2) == YoungDiagram:
+        self.young_diagram_2 = young_diagram_2
+      else:
+        self.young_diagram_2 = YoungDiagram(young_diagram_2)
+      if type(young_diagram_3) == YoungDiagram:
+        self.young_diagram_3 = young_diagram_3
+      else:
+        self.young_diagram_3 = YoungDiagram(young_diagram_3)
+      if is_real(self.young_diagram_1) and is_real(self.young_diagram_2) and is_real(self.young_diagram_3):
+        if vertex_number==1:
+          self.vertex_number = "1+"
+        elif vertex_number==2:
+          self.vertex_number = "2-"
+      else:
+        self.vertex_number = vertex_number
 
   def __str__(self):
     return f"{"First Representation: " + str(self.young_diagram_1) + " \nSecond Representation: " + str(self.young_diagram_2) + 
@@ -263,16 +275,19 @@ class Vertex:
     temp_young_diagram = conjugate_diagram(self.young_diagram_3)
     ds = self.young_diagram_1 * self.young_diagram_2
     ds = ds.evaluate_for_Nc(3)
+    if type(self.vertex_number)==str:
+      vertex_number = int(self.vertex_number[0])
+    else: vertex_number = self.vertex_number
     for i in range(ds.elements.size):
       if temp_young_diagram == ds.elements[i]:
-        if self.vertex_number <= ds.multiplicities[i]:
+        if vertex_number <= ds.multiplicities[i]:
           return True
     
     return False
 
 
 class Wigner:
-  def __init__(self, alpha=[0], beta=[0], gamma=[0], delta=[0], epsilon=[0], zeta=[0], vertex_number_1 = 1, vertex_number_2 = 1, vertex_number_3 = 1, vertex_number_4 = 1, n=3, vertex_expansion=None, testing=True):
+  def __init__(self, alpha=[0], beta=[0], gamma=[0], delta=[0], epsilon=[0], zeta=[0], vertex_number_1 = 1, vertex_number_2 = 1, vertex_number_3 = 1, vertex_number_4 = 1, n=3, vertex_expansion=None, include_coefficient=True, Nc=3, testing=False):
     if isinstance(alpha, Wigner):
       self.alpha = alpha.alpha
       self.beta= alpha.beta
@@ -280,24 +295,47 @@ class Wigner:
       self.delta= alpha.delta
       self.epsilon= alpha.epsilon
       self.zeta= alpha.zeta
-      self.vertex_1= alpha.vertex_1
-      self.vertex_2= alpha.vertex_2
-      self.vertex_3= alpha.vertex_3
-      self.vertex_4= alpha.vertex_4
+      self.vertex_1= Vertex(alpha.vertex_1)
+      self.vertex_2= Vertex(alpha.vertex_2)
+      self.vertex_3= Vertex(alpha.vertex_3)
+      self.vertex_4= Vertex(alpha.vertex_4)
+      if vertex_expansion != None:
+        self.vertex_expansion = vertex_expansion
     else:
-      self.alpha = YoungDiagram(alpha,Nc=n)
-      self.beta = YoungDiagram(beta,Nc=n)
-      self.gamma = YoungDiagram(gamma,Nc=n)
-      self.delta = YoungDiagram(delta,Nc=n)
-      self.epsilon = YoungDiagram(epsilon,Nc=n)
-      self.zeta = YoungDiagram(zeta,Nc=n)
+      if isinstance(alpha,YoungDiagram):
+        self.alpha = alpha
+      else:
+        self.alpha = YoungDiagram(alpha,Nc=n)
+      if isinstance(beta,YoungDiagram):
+        self.beta = beta
+      else:
+        self.beta = YoungDiagram(beta,Nc=n)
+      if isinstance(gamma,YoungDiagram):
+        self.gamma = gamma
+      else:
+        self.gamma = YoungDiagram(gamma,Nc=n)
+      if isinstance(delta,YoungDiagram):
+        self.delta = delta
+      else:
+        self.delta = YoungDiagram(delta,Nc=n)
+      if isinstance(epsilon,YoungDiagram):
+        self.epsilon = epsilon
+      else:
+        self.epsilon = YoungDiagram(epsilon,Nc=n)
+      if isinstance(zeta,YoungDiagram):
+        self.zeta = zeta
+      else:
+        self.zeta = YoungDiagram(zeta,Nc=n)
       self.vertex_1 = Vertex(self.beta,conjugate_diagram(self.gamma),conjugate_diagram(self.delta),vertex_number_1)
       self.vertex_2 = Vertex(self.gamma,conjugate_diagram(self.alpha),self.epsilon,vertex_number_2)
       self.vertex_3 = Vertex(self.alpha,conjugate_diagram(self.beta),self.zeta,vertex_number_3)
       self.vertex_4 = Vertex(self.delta,conjugate_diagram(self.epsilon),conjugate_diagram(self.zeta),vertex_number_4)
     self.value = None
     self.cases = None
+    self.Nc = Nc
     self.vertex_expansion = vertex_expansion
+    self.include_coefficient = include_coefficient
+    self.testing = testing
 
   def is_well_defined(self):
     """
@@ -339,6 +377,8 @@ class Wigner:
     return self.cases
 
   def get_value(self):
+    if self.testing:
+      print("Get Value for: ", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion)
     if self.value is None:
       if self.identify_case() == None:
         return 0
@@ -353,15 +393,18 @@ class Wigner:
                 case None:
                   match self.vertex_2.vertex_number:
                     case 1: values.append(Wigner(self, vertex_expansion=1).get_value())
-                    case 2: 
-                      values.append(Wigner(self, vertex_expansion=2).get_value() - Wigner(self, vertex_expansion=1).get_value())
-                      print(Wigner(self, vertex_expansion=2).get_value())
+                    case 2: values.append(Wigner(self, vertex_expansion=2).get_value() - Wigner(self, vertex_expansion=1).get_value())
+                    case "1+": values.append(self.calculate_normalization_plus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value() + Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value()))
+                    case "2-": values.append(self.calculate_normalization_minus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value() - Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value()))
                 case 1|2:
                   values.append(self.calculate_6j_with_quark_gluon_vertex())
+                case "1c"|"2c":
+                  values.append(self.calculate_6j_with_quark_gluon_conjugate_vertex())
       for i in range(len(values)-1):
-        if values[i] != values[i+1]:
+        if values[i] != values[i+1] and self.testing:
           print("Values do not agree" , values, self.cases)
-      print("Following values for Wigner  6j with: ", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion, values)
+      if self.testing:
+        print("Following values for Wigner  6j with: ", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion, values)
       self.value =  values[0] #TODO Implement comparison
     return self.value
 
@@ -398,7 +441,7 @@ class Wigner:
         return Fraction(1,1,1,self.epsilon.dimension_Nc(Nc=n)*self.beta.dimension_Nc(Nc=n)).reduce()
     return False
 
-  def calculate_6j_with_quark_gluon_vertex(self, n=3, debug=True, include_coefficient=True):
+  def calculate_6j_with_quark_gluon_vertex(self, n=3, debug=False):
     """
     Calculates a case 1 6j-symbol.
     """
@@ -407,31 +450,32 @@ class Wigner:
     lambdaks = find_intermediate_diagrams(self.alpha, self.alpha)
     if(len(lambdaks) == 0 or type(lambdaks) == bool):
       return 0
-    if type(self.vertex_2) == str:
+    if type(self.vertex_expansion) == str:
       possible_intermediates = find_intermediate_diagrams(self.alpha,self.gamma)
-      index = int(self.vertex_2[0])-1
+      index = int(self.vertex_2.vertex_number[0])-1
       intermediate = possible_intermediates[index]
-      alpha_prime = conjugate(intermediate,n)
+      alpha_prime = conjugate_diagram(intermediate,n)
       intermediates = find_child_diagram(self.alpha,self.gamma)
       alpha_tilde = intermediates[index]
       if alpha_prime in intermediates:
         alpha_tilde = alpha_prime
       if debug:
         print("alpha_tilde:",alpha_tilde)
-      sign = check_vertex_sign([1,4],self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],1,1,1,1)
-      if include_coefficient:
-        return calculate_coefficient(self.alpha,self.gamma,index+1,self.vertex_expansion,n)*Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+      sign = check_vertex_sign([1,4],self.alpha,self.beta,(1),self.gamma,alpha_tilde,(1),1,1,1,1)
+      if self.include_coefficient:
+        return calculate_coefficient(self.alpha,self.gamma,index+1,self.vertex_expansion,n)*Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,(1),self.gamma,alpha_tilde,(1),n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
       if debug:
-        print("Calculation of QuarkGluon",include_coefficient,Fraction(1,n**2-1),(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() , Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
-      return Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,[1,0,0],self.gamma,alpha_tilde,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+        print("Calculation of QuarkGluon",self.include_coefficient,Fraction(1,n**2-1),(sign*Wigner(self.alpha,self.beta,(1),self.gamma,alpha_tilde,(1),n=n).get_value() , Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
+      return Fraction(1,n**2-1)*(sign*Wigner(self.alpha,self.beta,(1),self.gamma,alpha_tilde,(1),n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
     else:
       intermediates = find_intermediate_diagrams(self.alpha,self.gamma)
       index = self.vertex_expansion-1
       if debug:
         print("One",intermediates, index, self.alpha, self.gamma)
-        print("Calculation of QuarkGluon",include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(n)) ,"-", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(n))))
-      if include_coefficient:
-        print("!!!",calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
+        print("Calculation of QuarkGluon",self.include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n),"*",Fraction(1,n**2-1),"*",(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(n)) ,"-", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(n))))
+      if self.include_coefficient:
+        if debug:
+          print("Calculation of QuarkGluon",calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
         return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
       return Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediates[index]),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
 
@@ -440,16 +484,20 @@ class Wigner:
     Calculates a case 1 6j-symbol.
     """
     if(debug):
-      print(debug * "  "+"QuarkGluon", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1, self.vertex_2, self.vertex_3, self.vertex_4)
-    lambdaks = find_intermediate_diagrams(self.alpha,self.gamma, False)
+      print(debug * "  "+"QuarkGluonConjugate", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion)
+    lambdaks = find_intermediate_diagrams(self.alpha,self.gamma)
     if(len(lambdaks) == 0 or type(lambdaks) == bool):
       return 0 
-    if type(self.vertex_2) == str:
-      intermediate = find_child_diagram(self.alpha,self.gamma)[int(self.vertex_2[0])-1]
-      return calculate_coefficient(self.alpha,self.gamma,int(self.vertex_2[0]),int(self.vertex_2[0]),n)*Fraction(1,n**2-1)*(Fraction(kronecker_delta(self.beta,intermediate),self.beta.dimension_Nc(Nc=n)) - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+    if type(self.vertex_expansion) == str:
+      intermediate = find_child_diagram(self.alpha,self.gamma)[int(self.vertex_expansion[0])-1]                                                           #TODO: Vertices 1 and 4 should be barred
+      if self.include_coefficient:
+        return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,int(self.vertex_expansion[0]),n)*Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1)).get_value() - Fraction(kronecker_delta(self.alpha,self.beta),n*self.alpha.dimension_Nc(Nc=n)))
+      else: return Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1)).get_value() - Fraction(kronecker_delta(self.alpha,self.beta),n*self.alpha.dimension_Nc(Nc=n)))
     else:
-      intermediate = find_intermediate_diagrams(self.alpha,self.gamma,False)[self.vertex_2-1]
-      return calculate_coefficient(self.alpha,self.gamma,self.vertex_2,self.vertex_2,n)*Fraction(1,n**2-1)*(Wigner(self.alpha,intermediate,[1,0,0],self.gamma,self.beta,[1,0,0],n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+      #Look into this, this should never be called
+      print("WHY IS THIS CALLED")
+      intermediate = find_intermediate_diagrams(self.alpha,self.gamma)[self.vertex_expansion-1]
+      return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.self.vertex_expansion,n)*Fraction(1,n**2-1)*(Wigner(self.alpha,intermediate,(1),self.gamma,self.beta,(1),n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
 
   def calculate_6j_with_quark_gluon_opposing(self, n=3, debug=False, include_coefficient=True):
     """
@@ -817,12 +865,12 @@ class Wigner:
       return Fraction(-1,1,n-2,2*n) * w1 - Fraction(1,1,n+2,2*n) * w2
     return sum
 
-  def calculate_normalization_plus(alpha, alpha_prime, n=3):
-    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,get_dimension(alpha_prime,n))+Wigner(alpha,alpha_prime, [1,0,0], alpha, conjugate(alpha_prime,n), [1,0,0], n).get_value() - Fraction(2,n*get_dimension(alpha,n))))
+  def calculate_normalization_plus(self, alpha, alpha_prime, n=3):
+    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))+Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1)).get_value() - Fraction(2,n*alpha.dimension_Nc(Nc=n))))
     return norm
 
-  def calculate_normalization_minus(alpha, alpha_prime, n=3):
-    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,get_dimension(alpha_prime,n))-Wigner(alpha,alpha_prime, [1,0,0], alpha, conjugate(alpha_prime,n), [1,0,0], n).get_value()))
+  def calculate_normalization_minus(self, alpha, alpha_prime, n=3):
+    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))-Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1)).get_value()))
     return norm
 
 
@@ -1161,6 +1209,18 @@ def find_child_diagram(alpha, beta):
   The list contains only a single diagram if alpha and beta are different.
   Return False if no diagram is admissable.
   """
+  diagrams1 = alpha.LR_multiply(YoungDiagram((1,1))).elements
+  diagrams2 = beta.LR_multiply(YoungDiagram((1,1))).elements
+  diagrams3 = [elem for elem in diagrams1 if elem in diagrams2]
+  diagrams3.sort(key=temp_sort_function, reverse=True)
+  return diagrams3
+
+def find_child_diagram_old(alpha, beta):
+  """
+  Returns a list of all diagrams that are one box smaller than alpha and beta and can be constructed by removing a box from them. 
+  The list contains only a single diagram if alpha and beta are different.
+  Return False if no diagram is admissable.
+  """
   diagrams = []
   diagrams1 = []
   diagrams2 = []
@@ -1214,7 +1274,9 @@ def is_gluon(alpha, n=3):
   return (alpha == "gluon" or is_adjoint(alpha, n))
 
 def is_real(alpha): # TODO compatible with any n
-  return alpha[0] == alpha[1] *2 and alpha[2] == 0
+  if isinstance(alpha, YoungDiagram):
+    return len(alpha.partition) == 2 and alpha.partition[0] == alpha.partition[1] *2
+  else: return alpha[0] == alpha[1] *2 and alpha[2] == 0
 
 def kronecker_delta(i,j):
   """
@@ -1235,7 +1297,7 @@ def scalar_product(j,k,alpha,n=3, debug=False):
   else : product *= Fraction(-1,n*alpha.dimension_Nc(n))
   return product
 
-def calculate_coefficient(alpha, gamma, a, i, n, debug=True):
+def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
   """
   Returns the coefficients as defined in the gluon-paper.
   """
