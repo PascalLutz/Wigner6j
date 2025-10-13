@@ -58,6 +58,13 @@ class TestWigner(unittest.TestCase):
         self.assertEqual(Wigner((3,1),(4,1),(3,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,24,7,5).reduce())
         self.assertEqual(Wigner((4,1),(5,1),(4,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,24,37,35).reduce())
 
+        self.assertEqual(Wigner((3,1),(3,2),(3,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(1,2,1,105).reduce())
+        self.assertEqual(Wigner((3,1),(4,1),(3,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(0).reduce())
+        self.assertEqual(Wigner((4,1),(5,1),(4,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(0).reduce())
+        
+        self.assertEqual(Wigner((4,1),(4,2),(4,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(1,6,5,111).reduce())
+
+
 
 if __name__ == '__main__':
     unittest.main()

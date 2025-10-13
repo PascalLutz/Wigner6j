@@ -424,7 +424,7 @@ class Wigner:
                 case None:
                   match self.vertex_2.vertex_number:
                     case 1: values.append(Wigner(self, vertex_expansion=1).get_value())
-                    case 2: values.append(Wigner(self, vertex_expansion=2).get_value() - Wigner(self, vertex_expansion=1).get_value())
+                    case 2: values.append(Wigner(self, vertex_expansion=2).get_value() + Wigner(self, vertex_expansion=1).get_value())
                     case "1+": values.append(self.calculate_normalization_plus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() + Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
                     case "2-": values.append(self.calculate_normalization_minus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() - Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
                 case 1|2:
@@ -439,6 +439,8 @@ class Wigner:
       sign = self.vertex_1.get_sign() * self.vertex_2.get_sign() * self.vertex_3.get_sign() * self.vertex_4.get_sign()
       values = [sign*value for value in values]
       self.value =  values[0] #TODO Implement comparison
+    if self.value == 0:
+      self.value = Fraction(0)
     return self.value
 
   def calculate_wigner_6j_two_quarks(self, n=3, debug=False):
