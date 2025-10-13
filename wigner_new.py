@@ -233,12 +233,13 @@ class Vertex:
   Handles Vertices and their young diagrams.
   """
   
-  def __init__(self, young_diagram_1=[0], young_diagram_2=[0], young_diagram_3=[0], vertex_number = 1):
+  def __init__(self, young_diagram_1=[0], young_diagram_2=[0], young_diagram_3=[0], vertex_number = 1, sign=None):
     if isinstance(young_diagram_1, Vertex):
       self.young_diagram_1 = young_diagram_1.young_diagram_1
       self.young_diagram_2 = young_diagram_1.young_diagram_2
       self.young_diagram_3 = young_diagram_1.young_diagram_3
       self.vertex_number = young_diagram_1.vertex_number
+      self.sign = young_diagram_1.sign
     else:
       if type(young_diagram_1) == YoungDiagram:
         self.young_diagram_1 = young_diagram_1
@@ -259,6 +260,7 @@ class Vertex:
           self.vertex_number = "2-"
       else:
         self.vertex_number = vertex_number
+      self.sign = sign
 
   def __str__(self):
     return f"{"First Representation: " + str(self.young_diagram_1) + " \nSecond Representation: " + str(self.young_diagram_2) + 
@@ -285,9 +287,37 @@ class Vertex:
     
     return False
 
+  def get_sign(self):
+    if self.sign is None:
+      if self.young_diagram_1 == self.young_diagram_2:
+        if ((self.young_diagram_1 == YoungDiagram((1),Nc=3) and self.young_diagram_2 == YoungDiagram((1),Nc=3) and self.young_diagram_3 == YoungDiagram((1),Nc=3))
+          or (self.young_diagram_1 == YoungDiagram((1,1),Nc=3) and self.young_diagram_2 == YoungDiagram((1,1),Nc=3) and self.young_diagram_3 == YoungDiagram((1,1),Nc=3))
+          or (self.young_diagram_1 == YoungDiagram((4,2),Nc=3) and self.young_diagram_2 == YoungDiagram((4,2),Nc=3) and self.young_diagram_3 == YoungDiagram((2,1),Nc=3))
+        ):
+          self.sign = -1
+        else: self.sign = 1
+      elif self.young_diagram_2 == self.young_diagram_3:
+        if ((self.young_diagram_2 == YoungDiagram((1),Nc=3) and self.young_diagram_3 == YoungDiagram((1),Nc=3) and self.young_diagram_1 == YoungDiagram((1),Nc=3))
+          or (self.young_diagram_2 == YoungDiagram((1,1),Nc=3) and self.young_diagram_3 == YoungDiagram((1,1),Nc=3) and self.young_diagram_1 == YoungDiagram((1,1),Nc=3))
+          or (self.young_diagram_2 == YoungDiagram((4,2),Nc=3) and self.young_diagram_3 == YoungDiagram((4,2),Nc=3) and self.young_diagram_1 == YoungDiagram((2,1),Nc=3))
+        ):
+          self.sign = -1
+        else: self.sign = 1
+      elif self.young_diagram_1 == self.young_diagram_3:
+        if ((self.young_diagram_1 == YoungDiagram((1),Nc=3) and self.young_diagram_3 == YoungDiagram((1),Nc=3) and self.young_diagram_2 == YoungDiagram((1),Nc=3))
+          or (self.young_diagram_1 == YoungDiagram((1,1),Nc=3) and self.young_diagram_3 == YoungDiagram((1,1),Nc=3) and self.young_diagram_2 == YoungDiagram((1,1),Nc=3))
+          or (self.young_diagram_1 == YoungDiagram((4,2),Nc=3) and self.young_diagram_3 == YoungDiagram((4,2),Nc=3) and self.young_diagram_2 == YoungDiagram((2,1),Nc=3))
+        ):
+          self.sign = -1
+        else: self.sign = 1
+      else: self.sign = 1
+    #print(self.young_diagram_1, self.young_diagram_2, self.young_diagram_3, self.sign)
+    return self.sign
 
 class Wigner:
-  def __init__(self, alpha=[0], beta=[0], gamma=[0], delta=[0], epsilon=[0], zeta=[0], vertex_number_1 = 1, vertex_number_2 = 1, vertex_number_3 = 1, vertex_number_4 = 1, n=3, vertex_expansion=None, include_coefficient=True, Nc=3, testing=False):
+  def __init__(self, alpha=[0], beta=[0], gamma=[0], delta=[0], epsilon=[0], zeta=[0], vertex_number_1 = 1, vertex_number_2 = 1, vertex_number_3 = 1, vertex_number_4 = 1, n=3, barred_vertices = [], vertex_expansion=None, include_coefficient=True, Nc=3, testing=False):
+    self.barred_vertices = barred_vertices
+    self.vertex_expansion = vertex_expansion
     if isinstance(alpha, Wigner):
       self.alpha = alpha.alpha
       self.beta= alpha.beta
@@ -299,8 +329,9 @@ class Wigner:
       self.vertex_2= Vertex(alpha.vertex_2)
       self.vertex_3= Vertex(alpha.vertex_3)
       self.vertex_4= Vertex(alpha.vertex_4)
-      if vertex_expansion != None:
-        self.vertex_expansion = vertex_expansion
+      self.barred_vertices = alpha.barred_vertices
+      if alpha.vertex_expansion != None:
+        self.vertex_expansion = alpha.vertex_expansion
     else:
       if isinstance(alpha,YoungDiagram):
         self.alpha = alpha
@@ -333,9 +364,9 @@ class Wigner:
     self.value = None
     self.cases = None
     self.Nc = Nc
-    self.vertex_expansion = vertex_expansion
     self.include_coefficient = include_coefficient
     self.testing = testing
+
 
   def is_well_defined(self):
     """
@@ -394,8 +425,8 @@ class Wigner:
                   match self.vertex_2.vertex_number:
                     case 1: values.append(Wigner(self, vertex_expansion=1).get_value())
                     case 2: values.append(Wigner(self, vertex_expansion=2).get_value() - Wigner(self, vertex_expansion=1).get_value())
-                    case "1+": values.append(self.calculate_normalization_plus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value() + Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value()))
-                    case "2-": values.append(self.calculate_normalization_minus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value() - Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value()))
+                    case "1+": values.append(self.calculate_normalization_plus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() + Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
+                    case "2-": values.append(self.calculate_normalization_minus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() - Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
                 case 1|2:
                   values.append(self.calculate_6j_with_quark_gluon_vertex())
                 case "1c"|"2c":
@@ -405,6 +436,8 @@ class Wigner:
           print("Values do not agree" , values, self.cases)
       if self.testing:
         print("Following values for Wigner  6j with: ", self.alpha, self.beta, self.gamma, self.delta, self.epsilon, self.zeta, self.vertex_1.vertex_number, self.vertex_2.vertex_number, self.vertex_3.vertex_number, self.vertex_4.vertex_number, self.vertex_expansion, values)
+      sign = self.vertex_1.get_sign() * self.vertex_2.get_sign() * self.vertex_3.get_sign() * self.vertex_4.get_sign()
+      values = [sign*value for value in values]
       self.value =  values[0] #TODO Implement comparison
     return self.value
 
@@ -489,15 +522,17 @@ class Wigner:
     if(len(lambdaks) == 0 or type(lambdaks) == bool):
       return 0 
     if type(self.vertex_expansion) == str:
-      intermediate = find_child_diagram(self.alpha,self.gamma)[int(self.vertex_expansion[0])-1]                                                           #TODO: Vertices 1 and 4 should be barred
+      intermediate = find_child_diagram(self.alpha,self.gamma)[int(self.vertex_expansion[0])-1]                                                      
+      if debug:
+        print("Calculation of QuarkGluonConjugate",self.include_coefficient,calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,int(self.vertex_expansion[0]),n),Fraction(1,n**2-1),(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1),barred_vertices=[1,4]).get_value() ," - ", Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n))))
       if self.include_coefficient:
-        return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,int(self.vertex_expansion[0]),n)*Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1)).get_value() - Fraction(kronecker_delta(self.alpha,self.beta),n*self.alpha.dimension_Nc(Nc=n)))
-      else: return Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1)).get_value() - Fraction(kronecker_delta(self.alpha,self.beta),n*self.alpha.dimension_Nc(Nc=n)))
+        return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,int(self.vertex_expansion[0]),n)*Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1),barred_vertices=[1,4]).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+      else: return Fraction(1,n**2-1)*(Wigner(self.alpha,self.beta,(1),self.gamma,intermediate,(1)).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
     else:
       #Look into this, this should never be called
       print("WHY IS THIS CALLED")
       intermediate = find_intermediate_diagrams(self.alpha,self.gamma)[self.vertex_expansion-1]
-      return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.self.vertex_expansion,n)*Fraction(1,n**2-1)*(Wigner(self.alpha,intermediate,(1),self.gamma,self.beta,(1),n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
+      return calculate_coefficient(self.alpha,self.gamma,self.vertex_2.vertex_number,self.vertex_expansion,n)*Fraction(1,n**2-1)*(Wigner(self.alpha,intermediate,(1),self.gamma,self.beta,(1),n=n).get_value() - Fraction(kronecker_delta(self.alpha,self.gamma),n*self.alpha.dimension_Nc(Nc=n)))
 
   def calculate_6j_with_quark_gluon_opposing(self, n=3, debug=False, include_coefficient=True):
     """
@@ -866,11 +901,11 @@ class Wigner:
     return sum
 
   def calculate_normalization_plus(self, alpha, alpha_prime, n=3):
-    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))+Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1)).get_value() - Fraction(2,n*alpha.dimension_Nc(Nc=n))))
+    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))+Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1),barred_vertices=[1,4]).get_value() - Fraction(2,n*alpha.dimension_Nc(Nc=n))))
     return norm
 
   def calculate_normalization_minus(self, alpha, alpha_prime, n=3):
-    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))-Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1)).get_value()))
+    norm = 1 / Fraction.sqrt(Fraction(2,(n**2-1)) * (Fraction(1,alpha_prime.dimension_Nc(Nc=n))-Wigner(alpha,alpha_prime,(1),alpha,conjugate_diagram(alpha_prime,n),(1),barred_vertices=[1,4]).get_value()))
     return norm
 
 
