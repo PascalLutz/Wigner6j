@@ -40,12 +40,12 @@ class TestWigner(unittest.TestCase):
     def test_case_1_symbols(self):# Case 1
         """Test Wigner 6j-symbols of Case 1."""
         
-        # Vertex 1 alpha=gamma and real, vertex 2 is 1+
+        #alpha=gamma and real, vertex 2 is 1+
         self.assertEqual(Wigner((2,1),(2,2),(2,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(-1,8,5,6).reduce())
         self.assertEqual(Wigner((4,2),(4,3),(4,2),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(-1,72,35,2).reduce())
         self.assertEqual(Wigner((4,2),(5,2),(4,2),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,36,5,14).reduce())
         
-        # Vertex 1 alpha=gamma and real, vertex 2 is 1-
+        #alpha=gamma and real, vertex 2 is 1-
         self.assertEqual(Wigner((2,1),(2,2),(2,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(-1,8,1,6).reduce())
         self.assertEqual(Wigner((4,2),(4,3),(4,2),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(-1,24,1,6).reduce())
         self.assertEqual(Wigner((4,2),(5,2),(4,2),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(1,12,1,6).reduce())
@@ -53,7 +53,7 @@ class TestWigner(unittest.TestCase):
     def test_case_1_symbols_2(self):# Case 1
         """Test Wigner 6j-symbols of Case 1."""
         
-        # Vertex 1 alpha=gamma and not real
+        #alpha=gamma and not real
         self.assertEqual(Wigner((3,1),(3,2),(3,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(-1,3,1,35).reduce())
         self.assertEqual(Wigner((3,1),(4,1),(3,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,24,7,5).reduce())
         self.assertEqual(Wigner((4,1),(5,1),(4,1),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,24,37,35).reduce())
@@ -64,6 +64,30 @@ class TestWigner(unittest.TestCase):
         
         self.assertEqual(Wigner((4,1),(4,2),(4,1),(1),(2,1),(1),1,2,1,1,3).get_value(),Fraction(1,6,5,111).reduce())
 
+    def test_case_1_symbols_2(self):# Case 1
+        """Test Wigner 6j-symbols of Case 1."""
+        
+        #alpha=gamma and alpha bar should be used
+        self.assertEqual(Wigner((3,2),(4,2),(3,2),(1),(2,1),(1),1,"1c",1,1,3).get_value(),Fraction(-1,6,1,35).reduce())
+        self.assertEqual(Wigner((3,2),(3,3),(3,2),(1),(2,1),(1),1,"1c",1,1,3).get_value(),Fraction(-1,12,1,35).reduce())
+        self.assertEqual(Wigner((4,3),(5,3),(4,3),(1),(2,1),(1),1,"1c",1,1,3).get_value(),Fraction(-1,6,5,259).reduce())
+        
+        #alpha=gamma and alpha bar should be used second vertex
+        self.assertEqual(Wigner((3,2),(4,2),(3,2),(1),(2,1),(1),1,"2c",1,1,3).get_value(),Fraction(-1,3,1,105).reduce())
+        self.assertEqual(Wigner((3,2),(3,3),(3,2),(1),(2,1),(1),1,"2c",1,1,3).get_value(),Fraction(1,1,1,105).reduce())
+        self.assertEqual(Wigner((4,3),(5,3),(4,3),(1),(2,1),(1),1,"2c",1,1,3).get_value(),Fraction(-1,8,5,111).reduce())
+        
+        #alpha=gamma and alpha bar should be used only one vertex
+        #self.assertEqual(Wigner((3,3),(4,3),(3,3),(1),(2,1),(1),1,"1c",1,1,3).get_value(),Fraction(-1,8,1,15).reduce()) # TODO Check with Malin
+        #self.assertEqual(Wigner((3,0),(4,0),(3,0),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,4,1,15).reduce()) # TODO Check with Malin
+        
+    def test_case_1_symbols_3(self):# Case 1
+        """Test Wigner 6j-symbols of Case 1."""
+        
+        #alpha != gamma
+        self.assertEqual(Wigner((2,1),(2,2),(3,3),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,4,1,3).reduce())
+        self.assertEqual(Wigner((2,1),(3,1),(3,0),(1),(2,1),(1),1,1,1,1,3).get_value(),Fraction(1,2,1,30).reduce())
+        
 
 
 if __name__ == '__main__':

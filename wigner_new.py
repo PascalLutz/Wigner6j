@@ -253,13 +253,13 @@ class Vertex:
         self.young_diagram_3 = young_diagram_3
       else:
         self.young_diagram_3 = YoungDiagram(young_diagram_3)
+      self.vertex_number = vertex_number
+      # Check whether the vertex is a 1+ or 1- vertex
       if is_real(self.young_diagram_1) and is_real(self.young_diagram_2) and is_real(self.young_diagram_3):
         if vertex_number==1:
           self.vertex_number = "1+"
         elif vertex_number==2:
           self.vertex_number = "2-"
-      else:
-        self.vertex_number = vertex_number
       self.sign = sign
 
   def __str__(self):
@@ -427,6 +427,8 @@ class Wigner:
                     case 2: values.append(Wigner(self, vertex_expansion=2).get_value() + Wigner(self, vertex_expansion=1).get_value())
                     case "1+": values.append(self.calculate_normalization_plus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() + Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
                     case "2-": values.append(self.calculate_normalization_minus(self.alpha,find_intermediate_diagrams(self.alpha,self.alpha)[0]) * (Wigner(self,vertex_expansion=1,include_coefficient=False).set_vertex_number(2,1).get_value() - Wigner(self,vertex_expansion="1c",include_coefficient=False).set_vertex_number(2,1).get_value()))
+                    case "1c": values.append(calculate_coefficient(conjugate_diagram(self.alpha),conjugate_diagram(self.alpha),1,1,self.Nc) * Wigner(self, vertex_expansion="1c",include_coefficient=False).get_value())
+                    case "2c": values.append(calculate_coefficient(conjugate_diagram(self.alpha),conjugate_diagram(self.alpha),2,1,self.Nc) * Wigner(self, vertex_expansion="1c",include_coefficient=False).get_value() + calculate_coefficient(conjugate_diagram(self.alpha),conjugate_diagram(self.alpha),2,2,self.Nc) * Wigner(self, vertex_expansion="2c",include_coefficient=False).get_value())
                 case 1|2:
                   values.append(self.calculate_6j_with_quark_gluon_vertex())
                 case "1c"|"2c":
@@ -1340,6 +1342,10 @@ def calculate_coefficient(alpha, gamma, a, i, n, debug=False):
   """
   if(debug):
     print("Coefficient Calculation with alpha, gamma:",alpha, gamma,a,i)
+  if type(a)==str:
+    a = int(a[0])
+  if type(i)==str:
+    i = int(i[0])
   if(a==1 and i == 2):
     return 0
   if(alpha != gamma):
